@@ -1,5 +1,11 @@
-//Testar os níveis
+//! Código para o dispositivo SHIU
+ /*! Projeto inicialmente implementado na biblioteca da Escola Politécnica de Pernambuco que visa diminuir o nível de ruído no ambiente.
+ * @author Ruamberg Vasconcelos e Kewin Lima
+ * @since 25/05/2016
+ * @version 2.0
+ */
 
+//Testar os níveis
 #define DEBUG 1
 #define NUM_SENSORES 2
 #define LUZ 13
@@ -20,10 +26,12 @@ bool deveAlertar = false;
 void setup() 
 {
 	Serial.begin(9600);
-	pinMode(LUZ, OUTPUT);
-	pinMode(SOM1, OUTPUT);
-	pinMode(SOM2, OUTPUT);
+	pinMode(LUZ, OUTPUT); /* @param[out]*/
+	pinMode(SOM1, OUTPUT); /* @param[out]*/
+	pinMode(SOM2, OUTPUT); /* @param[out]*/
 
+//! Descrição função for
+//! @param i
 	for(int i = 0; i < NUM_SENSORES; i++) 
 	{
 		pinMode(sensores[i], INPUT);
