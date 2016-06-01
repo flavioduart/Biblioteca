@@ -6,36 +6,38 @@
  */
 
 //Testar os níveis
-#define DEBUG        1
+#define DEBUG        1 // Ativar(1) ou desativar(0) a comunicação com o serial.
 #define NUM_SENSORES 2
 #define OVERFLOW     4000000000
-#define LUZ          13
-#define SOM1         8
-#define NIVEL_AVISO  500
-#define NIVEL_LIMITE 500
-#define TEMPO_LUZ    3000
-#define TEMPO_SOM    3000
+#define LUZ          13 // Sinalizador luminoso ligado à porta digital 13 do arduino 
+#define SOM1         8	// Sirene ligada à porta digital 8 do arduino
+#define NIVEL_AVISO  500 // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
+#define NIVEL_LIMITE 500 // Determina nível de ruído/pulsos para ativar a sirene.
+#define TEMPO_LUZ    3000 // Define o tempo de duração em que o sinalizador permanecerá ativo.
+#define TEMPO_SOM    3000 // Define o tempo de duração em que a sirene permanecerá ativo.
 #define REP_SOM      2
 #define REP_LUZ      2
 #define ON           1
 #define OFF          0
 #define TOLERANCIA   2000
 
-int sensores[NUM_SENSORES] = {A0, A1};
+int sensores[NUM_SENSORES] = {A0, A1}; // Sensores ligados às portas analógicas A0 e A1
 int nivel = 0;
 unsigned long t0 = 0;
 bool deveAlertar = false;
 void(* reset) (void) = 0;
 
+//Função que define os componentes sinalizador,sirene e sensores como entrada ou saída
+
 void setup() 
 {
   Serial.begin(9600);
-  pinMode(LUZ,  OUTPUT);
-  pinMode(SOM1, OUTPUT);
+  pinMode(LUZ,  OUTPUT); //@param[OUT]
+  pinMode(SOM1, OUTPUT); //@param[OUT]
 
   for(int i = 0; i < NUM_SENSORES; i++) 
   {
-    pinMode(sensores[i], INPUT);
+    pinMode(sensores[i], INPUT); //@param[IN]
   }
 }
 
