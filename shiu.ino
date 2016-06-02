@@ -8,6 +8,7 @@
 //Testar os níveis
 #define DEBUG        1 // Ativar(1) ou desativar(0) a comunicação com o serial.
 #define NUM_SENSORES 2
+#define NUM_INTERACOES 500
 #define OVERFLOW     4000000000
 #define LUZ          13 // Sinalizador luminoso ligado à porta digital 13 do arduino 
 #define SOM1         8	// Sirene ligada à porta digital 8 do arduino
@@ -15,8 +16,8 @@
 #define NIVEL_LIMITE 500 // Determina nível de ruído/pulsos para ativar a sirene.
 #define TEMPO_LUZ    3000 // Define o tempo de duração em que o sinalizador permanecerá ativo.
 #define TEMPO_SOM    3000 // Define o tempo de duração em que a sirene permanecerá ativo.
-#define REP_SOM      2
-#define REP_LUZ      2
+#define REP_SOM      2 //Quantidade de vezes que a sirene irá disparar 
+#define REP_LUZ      2 //Quantidade de vezes que o sinalizador irá disparar
 #define ON           1
 #define OFF          0
 #define TOLERANCIA   2000
@@ -47,20 +48,22 @@ void loop()
 	
   if(nivel < NIVEL_AVISO) 
   {
-    if(t0 >= OVERFLOW)
+    if(t0 < OVERFLOW)
     {
-      reset();
+      t0 = (millis()/1000); // Transforma para segundo para armazenar mais valores na variável
+      Serial.println(t0);
     }
-    else t0 = millis(); // transformar para segundos
+    else 
+    reset();
   }
 
-  deveAlertar = (millis() - t0) > TOLERANCIA;
-  
-  if(deveAlertar && nivel < NIVEL_LIMITE) 
+  deveAlertar = ((millis()/1000) - t0) > TOLERANCIA; // Se a condicao for aceita deveAlertar = 1(true) se a condicao for falsa deveAlertar = 0(false)
+
+  if(deveAlertar && nivel < NIVEL_LIMITE) //se deveAlertar for verdadeiro e nivel < NIVEL_LIMITE aviso luminoso
   {
     luz();
   }
-  else if(deveAlertar && nivel >= NIVEL_LIMITE) 
+  else if(deveAlertar && nivel >= NIVEL_LIMITE) //se deveAlertar for verdadeiro e nivel >= NIVEL_LIMITE aviso luminoso e sonoro
   {
     luz();
     som();
@@ -74,42 +77,44 @@ int ouvirNivel()
   int leitura = 0;
   for(int i = 0; i < NUM_SENSORES; i++) 
   {
-    leitura = read_sensor(sensores[i], 100);
-    if(leitura > value) value = leitura;
-    if(DEBUG) imprime_valor(&i, &leitura, &value); // NÂO TESTEI COM OS PONTEIROS 
+    leitura = read_sensor(sensores[i]);
+    if(DEBUG)
+    	imprime_valor(i,leitura,valor);
+    if(leitura > value) 
+    	value = leitura;
     return value;
   }
 }
 
-int read_sensor(int port, int times)
+int read_sensor(int port)
 {
   unsigned long value = 0;
-  for(int x = 0; x < times; x++)
+  for(int x = 0; x < NUM_INTERACOES; x++)  //Antes tinha times, uma funcao que passava como argumento. Desnecessario muito mais viavel usar um define N_INTERACOES
   {
     value += analogRead(port);
   }
-  value /= times;
+  value /= NUM_INTERACOES;
   return value;
 }
 
-void imprime_valor(int *i, int *leitura, int *value) //TESTAR ESSA FUNÇÃO
+void imprime_valor(int i, int leitura, int value) 
 {
   Serial.print("Sensor ");
-  Serial.print(*i+1);
+  Serial.print(i+1);
   Serial.print(": ");
-  Serial.println(*leitura);
-  Serial.print("Maior Valor: ");
-  Serial.println(*value);
+  Serial.println(leitura);
 }
 void luz() 
 {
     for(int n=0 ; n< REP_LUZ; n++)
     {
       digitalWrite(LUZ, HIGH);
-      if(DEBUG) Serial.println("Disparado Luz");
-      delay(TEMPO_LUZ);
-      digitalWrite(LUZ, LOW);
-      if(DEBUG) Serial.println("Desligando Luz");
+      if(DEBUG) 
+      	Serial.println("Disparado Luz");
+      	delay(TEMPO_LUZ);
+      	digitalWrite(LUZ, LOW);
+      if(DEBUG) 
+      	Serial.println("Desligando Luz");
     }
 }
 
@@ -118,9 +123,11 @@ void som()
     for(int n=0; n < REP_SOM ; n++ )
     {
       digitalWrite(SOM1, HIGH);
-      if(DEBUG) Serial.println("Disparado Som");
-      delay(TEMPO_SOM);
-      digitalWrite(SOM1, LOW);
-      if(DEBUG) Serial.println("Desligando Som");
+      if(DEBUG)
+      	Serial.println("Disparado Som");
+	delay(TEMPO_SOM);
+      	digitalWrite(SOM1, LOW);
+      if(DEBUG) 
+      	Serial.println("Desligando Som");
     }
 }
