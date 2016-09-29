@@ -1,5 +1,10 @@
 //Testar os níveis
+#include <EEPROM.h>
+#define LIMITE         2          // Define o limite de erro do sinal do potenciometro
+#define 
 #define DEBUG          1          // Ativar(1) ou desativar(0) a comunicação com o serial.
+#define ZERAR          1          // (1) zero o EEPROM (0) mantem o EEPROM com leituras anteriores
+#define DELAY          1000        // Define o tempo para o delay de debug em milissegundos
 #define NUM_SENSORES   2          // Numero de sensores usados
 #define NUM_INTERACOES 500        // Numero de interções no filtro
 #define OVERFLOW       4000000000 // Over flow para o unsigned long
@@ -8,21 +13,24 @@
 #define SOM            7          // Sirene ligada à porta digital do arduino
 #define COOLER         10         // Define a porta do cooler
 #define TEMPO_COOLER   3          // Tempo que o cooler permanecerá ligado 
-#define NIVEL_AVISO    400        // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
-#define NIVEL_LIMITE   400        // Determina nível de ruído/pulsos para ativar a sirene.
+#define NIVEL_AVISO    1500        // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
+#define NIVEL_LIMITE   1500        // Determina nível de ruído/pulsos para ativar a sirene.
 #define TEMPO_LUZ      3          // Define o tempo de duração em que o sinalizador permanecerá ativo.
 #define TEMPO_SOM      3          // Define o tempo de duração em que a sirene permanecerá ativo.
 #define REP_SOM        2          // Quantidade de vezes que a sirene irá disparar 
 #define REP_LUZ        2          // Quantidade de vezes que o sinalizador luminoso irá disparar
 #define ON             1
 #define OFF            0
-#define TOLERANCIA     2          // EM SEGUNDOS PELO AMOR DE DEUS!
+#define TOLERANCIA     1          // EM SEGUNDOS PELO AMOR DE DEUS!
 
 int           sensores[NUM_SENSORES] = {A0, A6}; // Sensores ligados às portas analógicas
-int           nivel                  = 0;
-unsigned long t0                     = 0;
-unsigned long tc                 = 0;
-int           deveAlertar            = 1;
+int           verificadores[NUM_SENSORES] = {A1, A5};  // Resposansaveis por gravar saida do potenciometro
+int           nivel                  = 0;    // Variável responsável pelo nível de ruído
+int           endereco               = 0;    // Endereço de memória que vai armazenar quantidade de vezes que a sirene acionou
+int           Q_Acionamento          = 0;    // Variável responsável por armazenar quantidade de vezes que a sirene acionou  
+unsigned long t0                     = 0;    // Variável responsável pelo tempo inicial
+unsigned long tc                     = 0;    // Variável responsável pelo tempo calculado  
+int           deveAlertar            = 1;    // Variável atua como um binário (true/false)
 unsigned int  expoente               = 1;
 bool          ligarcooler            = false;
 
@@ -40,12 +48,16 @@ void setup()
   {
     pinMode(sensores[i], INPUT); //@param[IN]
   }
+  if(ZERAR)
+    EEPROM.write(endereco, 0);    
+  else
+    EEPROM.write(endereco, EEPROM.read(endereco));
 }
 
 void loop() 
 {
   nivel = ouvirNivel();
-  lerTempoCooler();
+ // lerTempoCooler();
   if(nivel < NIVEL_AVISO) 
   {
     if(t0 < OVERFLOW)
@@ -61,6 +73,9 @@ void loop()
   if(deveAlertar && (nivel > NIVEL_AVISO && nivel < NIVEL_LIMITE)) //se deveAlertar for verdadeiro e nivel < NIVEL_LIMITE aviso luminoso
   {
     luz();
+    if(DEBUG)
+      Serial.println("Em Ocio");
+    delay(OCIO*1000);  
   }
   else if(deveAlertar && nivel >= NIVEL_LIMITE) //se deveAlertar for verdadeiro e nivel >= NIVEL_LIMITE aviso luminoso e sonoro
   {
@@ -69,21 +84,33 @@ void loop()
     if(DEBUG)
       Serial.println("Em Ocio");
     delay(OCIO*1000);
+    Q_Acionamento++;
+    EEPROM.write(endereco, Q_Acionamento);  
   }
-  if(DEBUG)delay(1000);
+  if(DEBUG)
+  {
+    Serial.print("Numero de vezes que acionou: ");
+    Serial.println(EEPROM.read(endereco));
+    delay(DELAY);
+  }
 }
 
 int ouvirNivel() 
 {
   int value = 0;
-  int leitura = 0;
+  int leitura_sensor = 0;
+  int leitura_verificador = 0;
   for(int i = 0; i < NUM_SENSORES; i++) 
   {
-    leitura = read_sensor(sensores[i]);
+    leitura_sensor = read_sensor(sensores[i]);
+    leitura_verificador = read_sensor(verificadores[i]);
     if(DEBUG)
-      imprime_valor(i,leitura);
-    if(leitura > value) 
-      value = leitura;
+    {
+      imprime_valor(i,leitura_sensor);
+      imprime_verificador(i, leitura_verificador);
+    }
+    if(leitura_sensor > value) 
+      value = leitura_sensor;
   }
   return value;
 }
@@ -171,4 +198,12 @@ void cooler()
     if(DEBUG) 
       Serial.println("Cooler desligado");      
   }
+}
+
+void imprime_verificador(int y, int leitura)
+{
+  Serial.print("Verficador ");
+  Serial.print(y+1);
+  Serial.print(" : ");
+  Serial.println(leitura);
 }
