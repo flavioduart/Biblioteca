@@ -1,7 +1,6 @@
 //Testar os níveis
 #include <EEPROM.h>
 #define LIMITE         2          // Define o limite de erro do sinal do potenciometro
-#define 
 #define DEBUG          1          // Ativar(1) ou desativar(0) a comunicação com o serial.
 #define ZERAR          1          // (1) zero o EEPROM (0) mantem o EEPROM com leituras anteriores
 #define DELAY          1000        // Define o tempo para o delay de debug em milissegundos
