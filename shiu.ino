@@ -1,19 +1,18 @@
-//Testar os níveis
 #include <EEPROM.h>
 #define LIMITE         2          // Define o limite de erro do sinal do potenciometro
 #define DEBUG          1          // Ativar(1) ou desativar(0) a comunicação com o serial.
 #define ZERAR          1          // (1) zero o EEPROM (0) mantem o EEPROM com leituras anteriores
-#define DELAY          1000        // Define o tempo para o delay de debug em milissegundos
-#define NUM_SENSORES   2          // Numero de sensores usados
-#define NUM_INTERACOES 500        // Numero de interções no filtro
+#define DELAY          500        // Define o tempo para o delay de debug em milissegundos
+#define NUM_SENSORES   1          // Numero de sensores usados
+#define NUM_INTERACOES 700        // Numero de interções no filtro
 #define OVERFLOW       4000000000 // Over flow para o unsigned long
 #define OCIO           5          // Tempo minimo entre uma ativação e outra
 #define LUZ            6          // Sinalizador luminoso ligado à porta digital do arduino 
 #define SOM            7          // Sirene ligada à porta digital do arduino
 #define COOLER         10         // Define a porta do cooler
 #define TEMPO_COOLER   3          // Tempo que o cooler permanecerá ligado 
-#define NIVEL_AVISO    1500        // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
-#define NIVEL_LIMITE   1500        // Determina nível de ruído/pulsos para ativar a sirene.
+#define NIVEL_AVISO    230        // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
+#define NIVEL_LIMITE   230        // Determina nível de ruído/pulsos para ativar a sirene.
 #define TEMPO_LUZ      3          // Define o tempo de duração em que o sinalizador permanecerá ativo.
 #define TEMPO_SOM      3          // Define o tempo de duração em que a sirene permanecerá ativo.
 #define REP_SOM        2          // Quantidade de vezes que a sirene irá disparar 
@@ -22,8 +21,9 @@
 #define OFF            0
 #define TOLERANCIA     1          // EM SEGUNDOS PELO AMOR DE DEUS!
 
-int           sensores[NUM_SENSORES] = {A0, A6}; // Sensores ligados às portas analógicas
-int           verificadores[NUM_SENSORES] = {A1, A5};  // Resposansaveis por gravar saida do potenciometro
+int           sensores[NUM_SENSORES] = {/*A0, */A6}; // Sensores ligados às portas analógicas
+int           verificadores[NUM_SENSORES] = {/*A5, */A1};  // Resposansaveis por gravar saida do potenciometro
+int           limite_POT[NUM_SENSORES] = {/*A DEFINIR, */556};  // Variável responsável por definir o limiar do potenciometro medido analogicamente em relação à sensibilidade do sensor
 int           nivel                  = 0;    // Variável responsável pelo nível de ruído
 int           endereco               = 0;    // Endereço de memória que vai armazenar quantidade de vezes que a sirene acionou
 int           Q_Acionamento          = 0;    // Variável responsável por armazenar quantidade de vezes que a sirene acionou  
@@ -51,11 +51,18 @@ void setup()
     EEPROM.write(endereco, 0);    
   else
     EEPROM.write(endereco, EEPROM.read(endereco));
+
+  
 }
 
 void loop() 
 {
-  nivel = ouvirNivel();
+  bool calibracao = false;
+  for(int i = 0; i < NUM_SENSORES; i++){
+   calibracao = ajusteSensibilidade(verificadores[i]);
+  }
+  if(calibracao){
+    nivel = ouvirNivel();
  // lerTempoCooler();
   if(nivel < NIVEL_AVISO) 
   {
@@ -74,7 +81,8 @@ void loop()
     luz();
     if(DEBUG)
       Serial.println("Em Ocio");
-    delay(OCIO*1000);  
+    else
+      delay(OCIO*1000);  
   }
   else if(deveAlertar && nivel >= NIVEL_LIMITE) //se deveAlertar for verdadeiro e nivel >= NIVEL_LIMITE aviso luminoso e sonoro
   {
@@ -82,7 +90,8 @@ void loop()
     som();
     if(DEBUG)
       Serial.println("Em Ocio");
-    delay(OCIO*1000);
+    else
+      delay(OCIO*1000);
     Q_Acionamento++;
     EEPROM.write(endereco, Q_Acionamento);  
   }
@@ -91,6 +100,7 @@ void loop()
     Serial.print("Numero de vezes que acionou: ");
     Serial.println(EEPROM.read(endereco));
     delay(DELAY);
+  }
   }
 }
 
@@ -102,11 +112,11 @@ int ouvirNivel()
   for(int i = 0; i < NUM_SENSORES; i++) 
   {
     leitura_sensor = read_sensor(sensores[i]);
-    leitura_verificador = read_sensor(verificadores[i]);
+    //leitura_verificador = read_sensor(verificadores[i]);
     if(DEBUG)
     {
       imprime_valor(i,leitura_sensor);
-      imprime_verificador(i, leitura_verificador);
+      //imprime_verificador(i, leitura_verificador);
     }
     if(leitura_sensor > value) 
       value = leitura_sensor;
@@ -163,8 +173,11 @@ void luz()
       digitalWrite(LUZ, HIGH);
       if(DEBUG) 
         Serial.println("Disparado Luz");
+      else
+      {
         delay(TEMPO_LUZ*1000);
         digitalWrite(LUZ, LOW);
+      }
       if(DEBUG) 
         Serial.println("Desligando Luz");
     }
@@ -177,9 +190,12 @@ void som()
       digitalWrite(SOM, HIGH);
       if(DEBUG)
         Serial.println("Disparado Som");
-    delay(TEMPO_SOM*1000);
+       else
+       { 
+        delay(TEMPO_SOM*1000);
         digitalWrite(SOM, LOW);
-      if(DEBUG) 
+       }
+       if(DEBUG) 
         Serial.println("Desligando Som");
     }
 }
@@ -205,4 +221,29 @@ void imprime_verificador(int y, int leitura)
   Serial.print(y+1);
   Serial.print(" : ");
   Serial.println(leitura);
+  Serial.println();
+}
+
+
+//--------------------- FUNÇÃO CRIADA PARA AUXILIAR A AJUSTAR A SENSIBILIDADE DO POTENCIOMETRO --------------------
+// OBS.: PRECISA TER VERIFICADO O LIMIAR DO POTENCIOMETRO PARA CADA SENSOR E INSERIDO NO CODIGO
+
+bool ajusteSensibilidade(int porta){            //A função recebe uma porta analogica (de um potenciometro) como parametro, para realizar a calibração do sensor
+  bool ajuste = true;                           //Flag para a calibração. Regulada - True; Desregulada - False;
+  int leitura = read_sensor(porta);             //Variavel de leitura analogica da porta
+  for(int i = 0; i < NUM_SENSORES; i++){        //Laço para calibrar todos os sensores listados;
+    int valor = leitura - limite_POT[i];        //Variavel de analise da precisão da calibração
+    if(valor > LIMITE){                         //Testes da precisão
+      Serial.println("Sensibilidade desregulada, girar potenciometro no sentido anti-horario");
+      imprime_verificador(i, leitura);
+      ajuste = false;
+    }
+    else if(valor < -LIMITE){
+      Serial.println("Sensibilidade desregulada, girar potenciometro no sentido horario");
+      imprime_verificador(i, leitura);
+      ajuste = false;
+    }
+  }
+
+  return ajuste;
 }
