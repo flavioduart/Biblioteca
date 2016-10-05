@@ -170,11 +170,11 @@ void luz()
 {
     for(int n=0 ; n< REP_LUZ; n++)
     {
-      digitalWrite(LUZ, HIGH);
       if(DEBUG) 
         Serial.println("Disparado Luz");
       else
       {
+        digitalWrite(LUZ, HIGH);
         delay(TEMPO_LUZ*1000);
         digitalWrite(LUZ, LOW);
       }
@@ -187,11 +187,11 @@ void som()
 {
     for(int n=0; n < REP_SOM ; n++ )
     {
-      digitalWrite(SOM, HIGH);
       if(DEBUG)
         Serial.println("Disparado Som");
        else
        { 
+        digitalWrite(SOM, HIGH);
         delay(TEMPO_SOM*1000);
         digitalWrite(SOM, LOW);
        }
