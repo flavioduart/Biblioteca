@@ -62,9 +62,8 @@ void setup()
 
 void loop() 
 {
-  bool calibracao;
   for(int i = 0; i < NUM_SENSORES; i++)
-    calibracao = ajusteSensibilidade(verificadores[i]);  
+    flag_calibracao[i] = ajusteSensibilidade(verificadores[i]);  
   
   nivel = ouvirNivel();
  // lerTempoCooler();
@@ -125,7 +124,8 @@ int ouvirNivel()
       if(leitura_sensor > value) 
         value = leitura_sensor;
     }
-  }
+  }else
+    value = -1;
   return value;
 }
 
@@ -243,11 +243,13 @@ bool ajusteSensibilidade(int porta){            //A função recebe uma porta an
         Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido anti-horario. O LIMITE EH: ");
         Serial.println(limite_POT[i]);
         imprime_verificador(i, leitura);
+        delay(1000);
         ajuste = false;
       }else{
         Serial.print("Sensibilidade desregulada, girar potenciometro no sentido anti-horario. O LIMITE EH: ");
         Serial.println(limite_POT[i]);
         imprime_verificador(i, leitura);
+        delay(1000);
         ajuste = false;
       }
     }
@@ -256,11 +258,13 @@ bool ajusteSensibilidade(int porta){            //A função recebe uma porta an
         Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido horario. O LIMITE EH: ");
         Serial.println(limite_POT[i]);
         imprime_verificador(i, leitura);
+        delay(1000);
         ajuste = false;
       }else{
         Serial.print("Sensibilidade desregulada, girar potenciometro no sentido horario. O LIMITE EH: ");
         Serial.println(limite_POT[i]);
         imprime_verificador(i, leitura);
+        delay(1000);
         ajuste = false;
       }
     }
