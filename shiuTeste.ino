@@ -21,7 +21,7 @@
 #define OFF            0
 #define TOLERANCIA     1          // EM SEGUNDOS PELO AMOR DE DEUS!
 
-int           sensores[NUM_SENSORES] = {A0, A6}; // Sensores ligados às portas analógicas
+int           sensores[NUM_SENSORES] = {A6, A0}; // Sensores ligados às portas analógicas
 int           verificadores[NUM_SENSORES] = {A5, A1};  // Resposansaveis por gravar saida do potenciometro
 int           limite_POT[NUM_SENSORES] = {554, 556};  // Variável responsável por definir o limiar do potenciometro medido analogicamente em relação à sensibilidade do sensor
 bool          flag_calibracao[NUM_SENSORES];
@@ -123,9 +123,9 @@ int ouvirNivel()
       }
       if(leitura_sensor > value) 
         value = leitura_sensor;
-    }
-  }else
-    value = -1;
+    }else
+        value = -1;
+  }
   return value;
 }
 
@@ -234,39 +234,38 @@ void imprime_verificador(int y, int leitura)
 // OBS.: PRECISA TER VERIFICADO O LIMIAR DO POTENCIOMETRO PARA CADA SENSOR E INSERIDO NO CODIGO
 
 bool ajusteSensibilidade(int porta){            //A função recebe uma porta analogica (de um potenciometro) como parametro, para realizar a calibração do sensor
-  bool ajuste = true;                           //Flag para a calibração. Regulada - True; Desregulada - False;
+  bool ajuste = false;                           //Flag para a calibração. Regulada - True; Desregulada - False;
   int leitura = read_sensor(porta);             //Variavel de leitura analogica da porta
   for(int i = 0; i < NUM_SENSORES; i++){        //Laço para calibrar todos os sensores listados;
     int valor = leitura - limite_POT[i];        //Variavel de analise da precisão da calibração
-    if(valor > LIMITE){                         //Testes da precisão
-      if(valor <= 15){
-        Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido anti-horario. O LIMITE EH: ");
-        Serial.println(limite_POT[i]);
-        imprime_verificador(i, leitura);
-        delay(1000);
-        ajuste = false;
-      }else{
-        Serial.print("Sensibilidade desregulada, girar potenciometro no sentido anti-horario. O LIMITE EH: ");
-        Serial.println(limite_POT[i]);
-        imprime_verificador(i, leitura);
-        delay(1000);
-        ajuste = false;
+    if(!flag_calibracao[i]){
+      if(valor > LIMITE){                         //Testes da precisão
+        if(valor <= 15){
+          Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido horario. O LIMITE EH: ");
+          Serial.println(limite_POT[i]);
+          imprime_verificador(i, leitura);
+          delay(1000);
+        }else{
+          Serial.print("Sensibilidade desregulada, girar potenciometro no sentido horario. O LIMITE EH: ");
+          Serial.println(limite_POT[i]);
+          imprime_verificador(i, leitura);
+          delay(1000);
+        }
       }
-    }
-    else if(valor < -LIMITE){
-      if(valor >= -15){
-        Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido horario. O LIMITE EH: ");
-        Serial.println(limite_POT[i]);
-        imprime_verificador(i, leitura);
-        delay(1000);
-        ajuste = false;
-      }else{
-        Serial.print("Sensibilidade desregulada, girar potenciometro no sentido horario. O LIMITE EH: ");
-        Serial.println(limite_POT[i]);
-        imprime_verificador(i, leitura);
-        delay(1000);
-        ajuste = false;
-      }
+      else if(valor < -LIMITE){
+        if(valor >= -15){
+          Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido anti-horario. O LIMITE EH: ");
+          Serial.println(limite_POT[i]);
+          imprime_verificador(i, leitura);
+          delay(1000);
+        }else{
+          Serial.print("Sensibilidade desregulada, girar potenciometro no sentido anti-horario. O LIMITE EH: ");
+          Serial.println(limite_POT[i]);
+          imprime_verificador(i, leitura);
+          delay(1000);
+        }
+      }else
+        ajuste = true;
     }
   }
 
