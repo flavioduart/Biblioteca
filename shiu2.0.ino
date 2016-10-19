@@ -232,6 +232,9 @@ void imprime_verificador(int y, int leitura)
 //--------------------- FUNÇÃO CRIADA PARA AUXILIAR A AJUSTAR A SENSIBILIDADE DO POTENCIOMETRO --------------------
 // OBS.: PRECISA TER VERIFICADO O LIMIAR DO POTENCIOMETRO PARA CADA SENSOR E INSERIDO NO CODIGO
 
+// COM BUGS
+
+
 void ajusteSensibilidade(){                      //A função recebe uma porta analogica (de um potenciometro) como parametro, para realizar a calibração do sensor
   bool ajuste = false;                           //Flag para a calibração. Regulada - True; Desregulada - False;
   int leitura;                                   //Variavel de leitura analogica da porta
