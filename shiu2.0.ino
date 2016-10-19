@@ -1,5 +1,5 @@
 #include <EEPROM.h>
-#define LIMITE         2          // Define o limite de erro do sinal do potenciometro
+#define LIMITE         4          // Define o limite de erro do sinal do potenciometro
 #define DEBUG          1          // Ativar(1) ou desativar(0) a comunicação com o serial.
 #define ZERAR          1          // (1) zero o EEPROM (0) mantem o EEPROM com leituras anteriores
 #define DELAY          500        // Define o tempo para o delay de debug em milissegundos
@@ -62,8 +62,7 @@ void setup()
 
 void loop() 
 {
-  for(int i = 0; i < NUM_SENSORES; i++)
-    flag_calibracao[i] = ajusteSensibilidade(verificadores[i]);  
+  ajusteSensibilidade();  
   
   nivel = ouvirNivel();
  // lerTempoCooler();
@@ -233,13 +232,14 @@ void imprime_verificador(int y, int leitura)
 //--------------------- FUNÇÃO CRIADA PARA AUXILIAR A AJUSTAR A SENSIBILIDADE DO POTENCIOMETRO --------------------
 // OBS.: PRECISA TER VERIFICADO O LIMIAR DO POTENCIOMETRO PARA CADA SENSOR E INSERIDO NO CODIGO
 
-bool ajusteSensibilidade(int porta){            //A função recebe uma porta analogica (de um potenciometro) como parametro, para realizar a calibração do sensor
+void ajusteSensibilidade(){                      //A função recebe uma porta analogica (de um potenciometro) como parametro, para realizar a calibração do sensor
   bool ajuste = false;                           //Flag para a calibração. Regulada - True; Desregulada - False;
-  int leitura = read_sensor(porta);             //Variavel de leitura analogica da porta
-  for(int i = 0; i < NUM_SENSORES; i++){        //Laço para calibrar todos os sensores listados;
-    int valor = leitura - limite_POT[i];        //Variavel de analise da precisão da calibração
+  int leitura;                                   //Variavel de leitura analogica da porta
+  for(int i = 0; i < NUM_SENSORES; i++){         //Laço para calibrar todos os sensores listados;
+    leitura = read_sensor(verificadores[i]);
+    int valor = leitura - limite_POT[i];         //Variavel de analise da precisão da calibração
     if(!flag_calibracao[i]){
-      if(valor > LIMITE){                         //Testes da precisão
+      if(valor > LIMITE){                        //Testes da precisão
         if(valor <= 15){
           Serial.print("Sensibilidade desregulada, girar potenciometro LEVEMENTE no sentido horario. O LIMITE EH: ");
           Serial.println(limite_POT[i]);
@@ -265,9 +265,7 @@ bool ajusteSensibilidade(int porta){            //A função recebe uma porta an
           delay(1000);
         }
       }else
-        ajuste = true;
+        flag_calibracao[i] = true;
     }
   }
-
-  return ajuste;
 }
