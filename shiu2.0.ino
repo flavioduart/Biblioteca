@@ -239,6 +239,7 @@ void ajusteSensibilidade(){                      //A função recebe uma porta a
   bool ajuste = false;                           //Flag para a calibração. Regulada - True; Desregulada - False;
   int leitura;                                   //Variavel de leitura analogica da porta
   for(int i = 0; i < NUM_SENSORES; i++){         //Laço para calibrar todos os sensores listados;
+    flag_calibracao[i] = false;                  //Variável de segurança para a calibração. Sem ela, após a primeira calibração o código faz as leituras e caso fique descalibrado, continuam as leituras dos sensores.
     leitura = read_sensor(verificadores[i]);
     int valor = leitura - limite_POT[i];         //Variavel de analise da precisão da calibração
     if(!flag_calibracao[i]){
