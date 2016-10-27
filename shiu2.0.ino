@@ -3,7 +3,7 @@
 #define DEBUG          1          // Ativar(1) ou desativar(0) a comunicação com o serial.
 #define ZERAR          1          // (1) zero o EEPROM (0) mantem o EEPROM com leituras anteriores
 #define DELAY          500        // Define o tempo para o delay de debug em milissegundos
-#define NUM_SENSORES   2          // Numero de sensores usados
+#define NUM_SENSORES   4          // Numero de sensores usados
 #define NUM_INTERACOES 700        // Numero de interções no filtro
 #define OVERFLOW       4000000000 // Over flow para o unsigned long
 #define OCIO           5          // Tempo minimo entre uma ativação e outra
@@ -11,8 +11,8 @@
 #define SOM            7          // Sirene ligada à porta digital do arduino
 #define COOLER         10         // Define a porta do cooler
 #define TEMPO_COOLER   3          // Tempo que o cooler permanecerá ligado 
-#define NIVEL_AVISO    230        // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
-#define NIVEL_LIMITE   230        // Determina nível de ruído/pulsos para ativar a sirene.
+#define NIVEL_AVISO    180        // Determina nível de ruído/pulsos para ativar o sinalizador luminoso.
+#define NIVEL_LIMITE   180        // Determina nível de ruído/pulsos para ativar a sirene.
 #define TEMPO_LUZ      3          // Define o tempo de duração em que o sinalizador permanecerá ativo.
 #define TEMPO_SOM      3          // Define o tempo de duração em que a sirene permanecerá ativo.
 #define REP_SOM        2          // Quantidade de vezes que a sirene irá disparar 
@@ -21,9 +21,9 @@
 #define OFF            0
 #define TOLERANCIA     1          // EM SEGUNDOS PELO AMOR DE DEUS!
 
-int           sensores[NUM_SENSORES] = {A6, A0}; // Sensores ligados às portas analógicas
-int           verificadores[NUM_SENSORES] = {A5, A1};  // Resposansaveis por gravar saida do potenciometro
-int           limite_POT[NUM_SENSORES] = {554, 556};  // Variável responsável por definir o limiar do potenciometro medido analogicamente em relação à sensibilidade do sensor
+int           sensores[NUM_SENSORES] = {A2, A3, A5, A6}; // Sensores ligados às portas analógicas
+int           verificadores[NUM_SENSORES] = {A7, A4, A1, A0};  // Resposansaveis por gravar saida do potenciometro
+int           limite_POT[NUM_SENSORES] = {554, 554, 554, 554};  // Variável responsável por definir o limiar do potenciometro medido analogicamente em relação à sensibilidade do sensor
 bool          flag_calibracao[NUM_SENSORES];
 int           nivel                  = 0;    // Variável responsável pelo nível de ruído
 int           endereco               = 0;    // Endereço de memória que vai armazenar quantidade de vezes que a sirene acionou
@@ -62,6 +62,8 @@ void setup()
 
 void loop() 
 {
+  for(int i=0; i < NUM_SENSORES; i++)
+    flag_calibracao[i] = false;
   ajusteSensibilidade();  
   
   nivel = ouvirNivel();
@@ -239,7 +241,6 @@ void ajusteSensibilidade(){                      //A função recebe uma porta a
   bool ajuste = false;                           //Flag para a calibração. Regulada - True; Desregulada - False;
   int leitura;                                   //Variavel de leitura analogica da porta
   for(int i = 0; i < NUM_SENSORES; i++){         //Laço para calibrar todos os sensores listados;
-    flag_calibracao[i] = false;                  //Variável de segurança para a calibração. Sem ela, após a primeira calibração o código faz as leituras e caso fique descalibrado, continuam as leituras dos sensores.
     leitura = read_sensor(verificadores[i]);
     int valor = leitura - limite_POT[i];         //Variavel de analise da precisão da calibração
     if(!flag_calibracao[i]){
