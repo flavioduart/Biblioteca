@@ -124,8 +124,7 @@ int ouvirNivel()
       }
       if(leitura_sensor > value) 
         value = leitura_sensor;
-    }else
-        value = -1;
+    }
   }
   return value;
 }
