@@ -35,15 +35,13 @@ short  limite_potenciometro[NUM_SENSOR] = {EEPROM.get(slot_limite[0], valor)/*, 
 int   vetor[TAMANHO_VETOR]              = {};    // Vetor responsável por guardar os ultimos TAMANHO_VETOR's níveis de ruído
 int   media_vetor                       =  0;    // Valor medio do vetor de valores
 int   endereco                          =  0;    // Endereço de memória que vai armazenar quantidade de vezes que a sirene acionou
-int   Q_Acionamento                     =  0;    // Responsável por armazenar quantidade de vezes que a sirene acionou
+int   Q_Acionamentos                     =  0;    // Responsável por armazenar quantidade de vezes que a sirene acionou
 int   potenciometro_ideal[NUM_SENSOR]   = {60};    // Valor ideal do potenciometro
 int   sensibilidade_ideal[NUM_SENSOR]   = {540};   // Valor ideal da sensibilidade
 
-char  flag_potencioemtro[NUM_SENSOR]    = {};    // Guarda caracteres 'S' ou 'N' para a calibração dos potenciometros 
+char  flag_potenciometro[NUM_SENSOR]    = {};    // Guarda caracteres 'S' ou 'N' para a calibração dos potenciometros 
 int   flag_sensor[NUM_SENSOR]           = {};    // Guarda caracteres '1' ou '0' para a calibração dos sensores
 
-unsigned long t0  = 0;    // Variável responsável pelo tempo inicial
-unsigned long tc  = 0;    // Variável responsável pelo tempo calculado
 
 LiquidCrystal lcd(5, 4, 3, 2, 1, 0);   //LiquidCrystal lcd(<pino RS>, <pino enable>, <pino D4>, <pino D5>, <pino D6>, <pino D7>)
 
@@ -53,13 +51,14 @@ void setup()
 {
   delay(DELAY_INICIAL);
   zerar_EEPROM();
-  if (DEBUG) Serial.begin(9600);
+  if (DEBUG) 
+  Serial.begin(9600);
   lcd.begin(16, 2); 
   
   pinMode(SIRENE, OUTPUT);
   
   for (int i = 0; i < NUM_SENSOR; i++)
-    pinMode(sensor[i], INPUT);
+    pinMode(sensor_porta[i], INPUT);
     
   for (int i = 0; i < NUM_BOTAO; i++)
     pinMode(botao[i], INPUT);
@@ -71,7 +70,7 @@ void loop()
 {
   ler_sensor();
   distribuir_vetor();
-  if( analisar_regulagem() );
+  if( analisar_regulagem() )
     menu_iniciar();
   else
     configuracao_potenciometro();
@@ -81,14 +80,14 @@ void menu_iniciar()
 {
   lcd.clear();
   
-  if(analisar_barulho());
+  if(analisar_barulho())
   {
     lcd.setCursor(0, 0);
     lcd.print("SIRENE");
     lcd.setCursor(1, 0);
     lcd.print("LIM");
-    lcd.print(valor_limite);
-    lcd.print("VAL")
+    lcd.print(NIVEL_LIMITE);
+    lcd.print("VAL");
     lcd.print(media_vetor);
     delay(DELAY_DISPLAY);
     sirene();
@@ -98,7 +97,7 @@ void menu_iniciar()
     lcd.setCursor(0, 0);
     for(int i = 0; i < NUM_SENSOR; i++)
     {
-       lcd.print(sinal_sensor[i]);
+       lcd.print(sensor_sinal[i]);
        lcd.setCursor(0, i+4); // 0,4,8,12
     }
     lcd.setCursor(1, 0);
@@ -158,14 +157,14 @@ void configuracao_potenciometro()
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("OBJETIVO ");
-  lcd.print("limite_potenciometro[NUM_SENSOR]");  
+  lcd.print(limite_potenciometro[NUM_SENSOR]);  
   lcd.setCursor(1, 0);
   lcd.print(escolha);
   delay(DELAY_AVISO); 
   
 }
 
-void configuracao_sensibildade_sensor()
+void configuracao_sensibilidade_sensor()
 {
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -187,47 +186,44 @@ void configuracao_sensibildade_sensor()
     lcd.setCursor(1, i+4);
   }
   
-  escolha = ler_escolha();
+  int escolha = ler_escolha();
   bool ajuste = analisar_sensibilidade(escolha);
   
   if(ajuste == false)
   {
-    while(ler_botao(botao[0]) == false)
-    {
+    while(ler_botao(botao[0]) == false){
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("DESCALIBRADO");
     delay(DELAY);
     lcd.clear();
     lcd.print("limite: ");
-    lcd.print(limite_ponteciometro[escolha]);
+    lcd.print(limite_potenciometro[escolha]);
     lcd.setCursor(0, 1);
     lcd.print("POT: ");
     lcd.print(analogRead(potenciometro_sinal[escolha]));
     }
     ajuste == true;
   }
-  else if
+  else 
   {
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("CALIBRADO");
     delay(DELAY);
   }
-  
-  
-  
-}
+ }
+
 
 bool analisar_sensibilidade(int x)
 {
-  if(sinal_sensor[x] > sensibilidade_ideial[x] + LIMITE || sinal_sensor[x] < sensibilidade_ideial[x] + LIMITE)
+  if(sensor_sinal[x] > sensibilidade_ideal[x] + LIMITE || sensor_sinal[x] < sensibilidade_ideal[x] + LIMITE)
     {
       flag_sensor[x] = false;
       return false;
     }
 
-    else if(sinal_sensor[x] <= sensibilidade_ideial[x] + LIMITE && sinal_sensor[x] >= sensibilidade_ideial[x] + LIMITE)
+    else if(sensor_sinal[x] <= sensibilidade_ideal[x] + LIMITE && sensor_sinal[x] >= sensibilidade_ideal[x] + LIMITE)
     {
       flag_sensor[x] = true;
       return true;
@@ -254,9 +250,9 @@ bool analisar_regulagem()
 {
   for(int i = 0; i < NUM_SENSOR; i++)
   {
-    if( sinal_potenciometro[i] > potenciometro_ideal[i] + LIMITE || sinal_potenciometro[i] < potenciometro_ideal - LIMITE)
+    if( potenciometro_sinal[i] > potenciometro_ideal[i] + LIMITE || potenciometro_sinal[i] < potenciometro_ideal - LIMITE)
       flag_potenciometro[i] = 'N';
-    else if( sinal_potenciometro[i] <= potenciometro_ideal + LIMITE && sinal_potenciometro[i] >= potenciometro_ideal - LIMITE)
+    else if( potenciometro_sinal[i] <= potenciometro_ideal + LIMITE && potenciometro_sinal[i] >= potenciometro_ideal - LIMITE)
       flag_potenciometro[i] = 'S';
   }
   
@@ -318,14 +314,14 @@ void distribuir_vetor()
    }
 }
 
-bool analisar_barulho();
+bool analisar_barulho()
 {
   int soma = 0;
   
   for(int i = 0; i < TAMANHO_VETOR; i++)
-    soma + = vetor[i];
+    soma += vetor[i];
   
-  media_vetor = soma/TAMANHO_VETOR 
+  media_vetor = soma/TAMANHO_VETOR;
   
   if( media_vetor >= NIVEL_LIMITE )
     return true;
@@ -355,7 +351,7 @@ int media_sala()
 
 int maximo_sala()
 {
-  int maior = sensor_sinal[0]
+  int maior = sensor_sinal[0];
   
   for(int i = 0; i < NUM_SENSOR ; i++)
   {
@@ -379,9 +375,9 @@ void sirene()
 void zerar_EEPROM() // Função responsável por zerar o EEPROM caso necessário
 {
   if (ZERAR)
-    EEPROM.write(slot_Acionamentos, 0);
+    EEPROM.write(Q_Acionamentos, 0);
   else
-    EEPROM.write(slot_Acionamentos, EEPROM.read(slot_Acionamento));
+    EEPROM.write(Q_Acionamentos, EEPROM.read(slot_Acionamento));
 }
 
 void zerar_vetor()
